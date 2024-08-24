@@ -225,7 +225,7 @@ int categorize_query(char* line) {
         return 0;
     }
 
-    if (strcmp(trimmed_line, "# add students") == 0) {
+    if (strcmp(trimmed_line, "# add student") == 0) {
         return 1;
     } else if (strcmp(trimmed_line, "# add course") == 0) {
         return 4;
