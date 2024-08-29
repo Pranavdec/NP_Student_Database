@@ -1,6 +1,6 @@
 #ifndef STUDENT_H
 #define STUDENT_H
-#include "course_dll.h"
+#include "dll.h"
 
 typedef struct Student{
 
@@ -8,7 +8,7 @@ typedef struct Student{
     char name[100];
     float cgpa;
     int n_subjects;
-    Cnode* sub_details; //head ptr to the course dll
+    node* sub_details; //head ptr to the course dll
 
 }Student;
 
