@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-// #include <unistd.h>
-// #include <stdlib.h>
+#include <unistd.h>
+#include <stdlib.h>
 // #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -14,7 +14,7 @@ int request_id = 0;
 int initiliaze_client_fifo(){
     pid_t pid = getpid();
     client_fifo = (char *)malloc(20);
-    sprintf(client_fifo, "./fifo_client_%d", pid);
+    sprintf(client_fifo, "/tmp/fifo_client.%d", pid);
     if(mkfifo(client_fifo, FILE_MODE) < 0){
         fprintf(stderr, "Error: Cannot create client fifo\n");
         return 1;
@@ -23,6 +23,11 @@ int initiliaze_client_fifo(){
 }
 
 int connect_to_server(){
+    if(mkfifo(SERVER_ENDPOINT, FILE_MODE) < 0){
+        fprintf(stderr, "Error: Cannot connect to server\n");
+        return 1;
+    }
+
     if((server_fd = open(SERVER_ENDPOINT, O_WRONLY)) < 0){
         fprintf(stderr, "Error: Cannot connect to server\n");
         return 1;
@@ -87,9 +92,9 @@ int delete_student(int roll_no){
     return 0;
 }
 
-int edit_student_cgpa(int roll_no, char *name, float cgpa){
+int edit_student_cgpa(int roll_no, float cgpa){
     char request[200];
-    sprintf(request, "%s,%d,edit_student,%d,%s,%f", client_fifo, request_id, roll_no, name, cgpa);
+    sprintf(request, "%s,%d,edit_student,%d,%f", client_fifo, request_id, roll_no, cgpa);
     request_id++;
     if(send_request(request) == 1){
         return 1;

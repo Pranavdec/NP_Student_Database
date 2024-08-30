@@ -8,7 +8,7 @@
 node *head = NULL;//Student_dll head ptr
 
 
-int add_course(int roll_no,int course_code,int marks){
+int add_course(int roll_no,int course_code,int marks,char *response){
 
     int dll_rtrcode = 0;
 
@@ -19,10 +19,13 @@ int add_course(int roll_no,int course_code,int marks){
         if((dll_rtrcode) == 1){
             // printf("Error 11: Student Database Empty!");
             fprintf(stderr, "Error: Student Database is Empty! Roll No: %d not found! Cannot add course\n", roll_no);
+            // add the above string to response
+            strcat(response, "Error: Student Database is Empty! Roll No: %d not found! Cannot add course\n");
             return 1;    
         }else if((dll_rtrcode) == 2){
             // printf("Error 12: RollNo %d not found!",roll_no);
             fprintf(stderr, "Error: Roll No: %d not found! Cannot add course \n", roll_no);
+            strcat(response, "Error: Roll No: %d not found! Cannot add course\n");
             return 1;
         }
     }
@@ -33,6 +36,7 @@ int add_course(int roll_no,int course_code,int marks){
     if(cptr != NULL){
         // printf("Error: Duplicate Primary Key Entry of Course Code: %d", course_code);
         fprintf(stderr, "Error: Duplicate Primary Key Entry of Course Code: %d\n", course_code);
+        strcat(response, "Error: Duplicate Primary Key Entry of Course Code: %d\n");
         return 1;
     }
 
@@ -45,18 +49,19 @@ int add_course(int roll_no,int course_code,int marks){
     if(dll_rtrcode == 3){
         // printf("Error 14: Memory Overflown");
         fprintf(stderr, "Error: Memory Overflown! Cannot add course\n");
+        strcat(response, "Error: Memory Overflown! Cannot add course\n");
         return 1;
     }else if(dll_rtrcode == 0){
         sptr->n_subjects = sptr->n_subjects + 1;
         // printf("Success 20: Execution Successfull\n");
+        strcat(response, "Success: Course added successfully\n");
         return 0;
     }
 
     return 0;
-
 }
 
-int delete_course(int roll_no,int course_code){
+int delete_course(int roll_no,int course_code,char *response){
 
     int dll_rtrcode = 0;
 
@@ -66,10 +71,12 @@ int delete_course(int roll_no,int course_code){
         if((dll_rtrcode) == 1){
             // printf("Error 11: Student Database Empty!");
             fprintf(stderr, "Error: Student Database is Empty! Roll No: %d not found! Cannot delete course\n", roll_no);
+            strcat(response, "Error: Student Database is Empty! Roll No: %d not found! Cannot delete course\n");
             return 1;    
         }else if((dll_rtrcode) == 2){
             // printf("Error 12: RollNo %d not found!",roll_no);
             fprintf(stderr, "Error: Roll No: %d not found! Cannot delete course \n", roll_no);
+            strcat(response, "Error: Roll No: %d not found! Cannot delete course\n");
             return 1;
         }
     }
@@ -80,10 +87,12 @@ int delete_course(int roll_no,int course_code){
         if((dll_rtrcode) == 1){
             // printf("Error 11: Course List Empty");
             fprintf(stderr, "Error: Course List is Empty! Cannot delete course\n");
+            strcat(response, "Error: Course List is Empty! Cannot delete course\n");
             return 1;
         }else if((dll_rtrcode) == 3){
             // printf("Error 13: Course with Course code %d not found!", course_code);
             fprintf(stderr, "Error: Course with Course code %d not found! Cannot delete course\n", course_code);
+            strcat(response, "Error: Course with Course code %d not found! Cannot delete course\n");
             return 1;
         }
     }
@@ -93,10 +102,12 @@ int delete_course(int roll_no,int course_code){
     if(dll_rtrcode == 5){
         // printf("Error 15: Passing NULL when a Course List is expected");
         fprintf(stderr, "Error: Passing NULL when a Course List is expected! Cannot delete course\n");
+        strcat(response, "Error: Passing NULL when a Course List is expected! Cannot delete course\n");
         return 1;
     }else{
         sptr->n_subjects = sptr->n_subjects - 1;
         // printf("Error 20: Execution Successfull\n");
+        strcat(response, "Success: Course deleted successfully\n");
         return 0;
     }
 
@@ -104,7 +115,7 @@ int delete_course(int roll_no,int course_code){
 
 }
 
-int edit_course(int roll_no,int course_code,int marks){
+int edit_course(int roll_no,int course_code,int marks,char *response){
 
     int dll_rtrcode = 0;
 
@@ -114,10 +125,12 @@ int edit_course(int roll_no,int course_code,int marks){
         if((dll_rtrcode) == 1){
             // printf("Error 11: Student Database Empty!");
             fprintf(stderr, "Error: Student Database is Empty! Roll No: %d not found! Cannot edit course\n", roll_no);
+            strcat(response, "Error: Student Database is Empty! Roll No: %d not found! Cannot edit course\n");
             return 1;    
         }else if((dll_rtrcode) == 2){
             // printf("Error 12: RollNo %d not found!",roll_no);
             fprintf(stderr, "Error: Roll No: %d not found! Cannot edit course \n", roll_no);
+            strcat(response, "Error: Roll No: %d not found! Cannot edit course\n");
             return 1;
         }
     }
@@ -128,10 +141,12 @@ int edit_course(int roll_no,int course_code,int marks){
         if((dll_rtrcode) == 1){
             // printf("Error 11: Course List Empty");
             fprintf(stderr, "Error: Course List is Empty! Cannot edit course\n");
+            strcat(response, "Error: Course List is Empty! Cannot edit course\n");
             return 1;
         }else if((dll_rtrcode) == 3){
             // fprintf("Error 13: Course with Course code %d not found!", course_code);
             fprintf(stderr, "Error: Course with Course code %d not found! Cannot edit course\n", course_code);
+            strcat(response, "Error: Course with Course code %d not found! Cannot edit course\n");
             return 1;
         }
     }
@@ -140,15 +155,17 @@ int edit_course(int roll_no,int course_code,int marks){
 
     if(dll_rtrcode == 5){
         fprintf(stderr, "Error: Passing NULL when a Course List is expected! Cannot edit course\n");
+        strcat(response, "Error: Passing NULL when a Course List is expected! Cannot edit course\n");
         return 1;
     }
     // printf("Success 20: Execution Successfull\n");
+    strcat(response, "Success: Course edited successfully\n");
     return 0;
 
 
 }
 
-int add_student(int roll_no,char* name,float cgpa){
+int add_student(int roll_no,char* name,float cgpa,char *response){
 
     int dll_rtrcode = 0;
 
@@ -156,12 +173,14 @@ int add_student(int roll_no,char* name,float cgpa){
     if(sptr != NULL){
         // printf("Error 21: Duplicate Primary Key Entry of Roll No: %d", roll_no);
         fprintf(stderr, "Error: Duplicate Primary Key Entry of Roll No: %d\n", roll_no);
+        strcat(response, "Error: Duplicate Primary Key Entry of Roll No: %d\n");
         return 1;
     }
 
     Student *student = (Student *)malloc(sizeof(Student));
     if (student == NULL) {
         fprintf(stderr, "Error: Memory allocation failed for student\n");
+        strcat(response, "Error: Memory allocation failed for student\n");
         return 1;
     }
 
@@ -176,9 +195,11 @@ int add_student(int roll_no,char* name,float cgpa){
     if(dll_rtrcode == 4){
         // printf("Error 14: Memory Overflown");
         fprintf(stderr, "Error: Memory Overflown! Cannot add student\n");
+        strcat(response, "Error: Memory Overflown! Cannot add student\n");
         return 1;
     }else if(dll_rtrcode == 0){
         // printf("Success 20: Execution Successfull\n");
+        strcat(response, "Success: Student added successfully\n");
         return 0;
     }
     
@@ -187,7 +208,7 @@ int add_student(int roll_no,char* name,float cgpa){
     return 0;
 }
 
-int delete_student(int roll_no){
+int delete_student(int roll_no,char *response){
 
     int dll_rtrcode = 0;
 
@@ -197,10 +218,12 @@ int delete_student(int roll_no){
         if((dll_rtrcode) == 1){
             // printf("Error 11: Student Database Empty!");
             fprintf(stderr, "Error: Student Database is Empty! Roll No: %d not found! Cannot delete student\n", roll_no);
+            strcat(response, "Error: Student Database is Empty! Roll No: %d not found! Cannot delete student\n");
             return 1;    
         }else if((dll_rtrcode) == 2){
             // printf("Error 12: RollNo %d not found!",roll_no);
             fprintf(stderr, "Error: Roll No: %d not found! Cannot delete student \n", roll_no);
+            strcat(response, "Error: Roll No: %d not found! Cannot delete student\n");
             return 1;
         }
     }
@@ -210,9 +233,11 @@ int delete_student(int roll_no){
     if(dll_rtrcode == 5){
         // printf("Error 15: Passing NULL when a Student List is expected");
         fprintf(stderr, "Error: Passing NULL when a Student List is expected! Cannot delete student\n");
+        strcat(response, "Error: Passing NULL when a Student List is expected! Cannot delete student\n");
         return 1;
     }else{
         // printf("Error 20: Execution Successfull\n");
+        strcat(response, "Success: Student deleted successfully\n");
         return 0;
     }
 
@@ -220,7 +245,7 @@ int delete_student(int roll_no){
 
 }
 
-int edit_student_cgpa(int roll_no,float cgpa){
+int edit_student_cgpa(int roll_no,float cgpa,char *response){
 
     int dll_rtrcode = 0;
 
@@ -230,10 +255,12 @@ int edit_student_cgpa(int roll_no,float cgpa){
         if((dll_rtrcode) == 1){
             // printf("Error 11: Student Database Empty!");
             fprintf(stderr, "Error: Student Database is Empty! Roll No: %d not found! Cannot edit student\n", roll_no);
+            strcat(response, "Error: Student Database is Empty! Roll No: %d not found! Cannot edit student\n");
             return 1;    
         }else if((dll_rtrcode) == 2){
             // printf("Error 12: RollNo %d not found!",roll_no);
             fprintf(stderr, "Error: Roll No: %d not found! Cannot edit student \n", roll_no);
+            strcat(response, "Error: Roll No: %d not found! Cannot edit student\n");
             return 1;
         }
     }
@@ -242,19 +269,22 @@ int edit_student_cgpa(int roll_no,float cgpa){
 
     if(dll_rtrcode == 5){
         fprintf(stderr, "Error: Passing NULL when a Student List is expected! Cannot edit student\n");
+        strcat(response, "Error: Passing NULL when a Student List is expected! Cannot edit student\n");
         return 1;
     }
 
     // printf("Success 20: Execution Successfull");
+    strcat(response, "Success: Student edited successfully\n");
     return 0;    
 
 }
 
-int write_into_outputfile(){
+int write_into_outputfile(char *response){
     FILE *fp = fopen("2106_2122.out","w");
     if(fp == NULL){
         // printf("Error 31: File not found");
         fprintf(stderr, "Error: File not found! Cannot write to file\n");
+        strcat(response, "Error: File not found! Cannot write to file\n");
         return 1;
     }
 
@@ -278,5 +308,6 @@ int write_into_outputfile(){
 
 
     fclose(fp);
+    strcat(response, "Success: Data written to file successfully\n");
     return 0;
 }
