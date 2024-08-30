@@ -2,8 +2,9 @@
 #define DATABASE_H
 #include "course.h"
 #include "student.h"
-#include "course_dll.h"
-#include "student_dll.h"
+// #include "course_dll.h"
+// #include "student_dll.h"
+#include "dll.h"
 
 
 int add_course(int roll_no,int course_code,int marks);

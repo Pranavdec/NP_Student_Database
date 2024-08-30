@@ -5,10 +5,10 @@ CC = gcc
 CFLAGS = -Wall -Wextra -Werror -std=c99
 
 # Source files
-SOURCES = course_dll.c database.c input_processing.c student_dll.c
+SOURCES = dll.c database.c input_processing.c
 
 # Header files
-HEADERS = course.h course_dll.h database.h student.h student_dll.h
+HEADERS = course.h dll.h database.h student.h
 
 # Executable name
 EXECUTABLE = 2106_2122
@@ -30,3 +30,4 @@ $(EXECUTABLE): $(OBJECTS)
 # Clean rule
 clean:
 	rm -f $(OBJECTS) $(EXECUTABLE)
+	rm -f 2106_2122.out
