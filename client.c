@@ -27,7 +27,6 @@ int connect_to_server(){
         fprintf(stderr, "Error: Cannot connect to server\n");
         return 1;
     }
-    return server_fd;
 }
 
 int send_request(char *request){
@@ -39,7 +38,7 @@ int send_request(char *request){
 }
 
 int add_course(int roll_no, int course_code, int marks){
-    char request[100];
+    char request[200];
     sprintf(request, "%s,%d,add_course,%d,%d,%d", client_fifo, request_id, roll_no, course_code, marks);
     request_id++;
     if(send_request(request) == 1){
@@ -49,7 +48,7 @@ int add_course(int roll_no, int course_code, int marks){
 }
 
 int delete_course(int roll_no, int course_code){
-    char request[100];
+    char request[200];
     sprintf(request, "%s,%d,delete_course,%d,%d", client_fifo, request_id, roll_no, course_code);
     request_id++;
     if(send_request(request) == 1){
@@ -59,7 +58,7 @@ int delete_course(int roll_no, int course_code){
 }
 
 int edit_course(int roll_no, int course_code, int marks){
-    char request[100];
+    char request[200];
     sprintf(request, "%s,%d,edit_course,%d,%d,%d", client_fifo, request_id, roll_no, course_code, marks);
     request_id++;
     if(send_request(request) == 1){
@@ -69,7 +68,7 @@ int edit_course(int roll_no, int course_code, int marks){
 }
 
 int add_student(int roll_no, char *name, float cgpa){
-    char request[100];
+    char request[200];
     sprintf(request, "%s,%d,add_student,%d,%s,%f", client_fifo, request_id, roll_no, name, cgpa);
     request_id++;
     if(send_request(request) == 1){
@@ -79,7 +78,7 @@ int add_student(int roll_no, char *name, float cgpa){
 }
 
 int delete_student(int roll_no){
-    char request[100];
+    char request[200];
     sprintf(request, "%s,%d,delete_student,%d", client_fifo, request_id, roll_no);
     request_id++;
     if(send_request(request) == 1){
@@ -89,7 +88,7 @@ int delete_student(int roll_no){
 }
 
 int edit_student_cgpa(int roll_no, char *name, float cgpa){
-    char request[100];
+    char request[200];
     sprintf(request, "%s,%d,edit_student,%d,%s,%f", client_fifo, request_id, roll_no, name, cgpa);
     request_id++;
     if(send_request(request) == 1){
@@ -98,8 +97,8 @@ int edit_student_cgpa(int roll_no, char *name, float cgpa){
     return 0;
 }
 
-int write(){
-    char request[100];
+int write_into_outputfile(){
+    char request[200];
     sprintf(request, "%s,%d,write", client_fifo, request_id);
     if(send_request(request) == 1){
         return 1;

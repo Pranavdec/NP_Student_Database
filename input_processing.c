@@ -378,24 +378,24 @@ int parse(FILE* file) {
     return 0;
 }
 
-int main(int argc, char* argv[]){
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <input_file>\n", argv[0]);
-        return 1;
-    }
-    FILE* file = input_processing(argv[1]);
-    if(file == NULL){
-        fprintf(stderr, "Error: Failed to open file.\n");
-        return 1;
-    }
-    if(parse(file) != 0){
-        fprintf(stderr, "Error: Failed to parse file Completely.\n");
-        fclose(file);
-        return 1;
-    }
-    fclose(file);
+// int main(int argc, char* argv[]){
+//     if (argc != 2) {
+//         fprintf(stderr, "Usage: %s <input_file>\n", argv[0]);
+//         return 1;
+//     }
+//     FILE* file = input_processing(argv[1]);
+//     if(file == NULL){
+//         fprintf(stderr, "Error: Failed to open file.\n");
+//         return 1;
+//     }
+//     if(parse(file) != 0){
+//         fprintf(stderr, "Error: Failed to parse file Completely.\n");
+//         fclose(file);
+//         return 1;
+//     }
+//     fclose(file);
 
-    write();
+//     write();
     
-    return 0;
-}
+//     return 0;
+// }

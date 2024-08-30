@@ -250,7 +250,7 @@ int edit_student_cgpa(int roll_no,float cgpa){
 
 }
 
-int write(){
+int write_into_outputfile(){
     FILE *fp = fopen("2106_2122.out","w");
     if(fp == NULL){
         // printf("Error 31: File not found");

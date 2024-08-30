@@ -13,7 +13,7 @@ int edit_course(int roll_no, int course_code, int marks);
 int add_student(int roll_no, char *name, float cgpa);
 int delete_student(int roll_no);
 int edit_student_cgpa(int roll_no, float cgpa);
-int write();
+int write_into_outputfile();
 
 
 
