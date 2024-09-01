@@ -4,11 +4,6 @@
 // #include "database.h"
 #include "client.h"
 
-typedef struct {
-    char action;
-    char type;
-    int category;
-} QueryCategory;
 
 FILE* input_processing(char* filename){
     FILE* file = fopen(filename, "r");
@@ -378,24 +373,3 @@ int parse(FILE* file) {
     return 0;
 }
 
-int main(int argc, char* argv[]){
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <input_file>\n", argv[0]);
-        return 1;
-    }
-    FILE* file = input_processing(argv[1]);
-    if(file == NULL){
-        fprintf(stderr, "Error: Failed to open file.\n");
-        return 1;
-    }
-    if(parse(file) != 0){
-        fprintf(stderr, "Error: Failed to parse file Completely.\n");
-        fclose(file);
-        return 1;
-    }
-    fclose(file);
-
-    write();
-    
-    return 0;
-}

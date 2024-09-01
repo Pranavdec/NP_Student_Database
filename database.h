@@ -14,7 +14,7 @@ int add_student(int roll_no,char* name,float cgpa);
 int delete_student(int roll_no);
 int edit_student_cgpa(int roll_no,float cgpa);
 // int edit_student_n_subjects(int roll_no,int n_subjects);
-int write();
+int write_database_into_output();
 
 
 
