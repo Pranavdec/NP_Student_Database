@@ -46,63 +46,149 @@ void handle_request(IPCMessage *request) {
     } else {
         fprintf(stderr, "Error: Unknown operation %s\n", request->operation);
     }
+
+    return;
 }
 
+void write_response_to_fifo(char *response, char *fifo_path) {
+
+    printf("Writing response");
+    int response_fd = open(fifo_path, O_WRONLY);
+    if (response_fd < 0) {
+        fprintf(stderr, "Error: Cannot open response FIFO %s\n", fifo_path);
+        return;
+    }
+
+    ssize_t bytes_written = write(response_fd, response, strlen(response) + 1);
+    if (bytes_written < 0) {
+        fprintf(stderr, "Error: Cannot write to response FIFO %s\n", fifo_path);
+    }else{
+        fprintf(stdout, "%ld bytes written\n", bytes_written);
+    }
+
+    close(response_fd);
+}
+
+
 void handle_add_student(IPCMessage *request) {
-    if (add_student(request->args.add_student.arg1, request->args.add_student.arg2, request->args.add_student.arg3) == 0) {
+    char response[256];  // Assuming the response fits within 256 characters
+    int result = add_student(request->args.add_student.arg1, request->args.add_student.arg2, request->args.add_student.arg3, response);
+    
+    // Debug statements
+    printf("In handle_add_student\n");
+    printf("Response from add_student: %s\n", response);
+
+    // Check the result and print a success/failure message
+    if (result == 0) {
         printf("Student added successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to add student\n");
     }
+
+    // Debug statement for FIFO path
+    printf("Writing response to FIFO: %s\n", request->response_fifo);
+
+    //The above printf is printing, the below printf is not printing
+
+    // Write the response to the FIFO
+    printf("Writing response");
+    // printf("\n");
+
+    int response_fd = open(request->response_fifo, O_WRONLY);
+    if (response_fd < 0) {
+        fprintf(stderr, "Error: Cannot open response FIFO %s\n", request->response_fifo);
+        return;
+    }
+
+    ssize_t bytes_written = write(response_fd, response, strlen(response) + 1);
+    if (bytes_written < 0) {
+        fprintf(stderr, "Error: Cannot write to response FIFO %s\n", request->response_fifo);
+    }else{
+        fprintf(stdout, "%ld bytes written\n", bytes_written);
+    }
+
+    close(response_fd);
 }
 
+
 void handle_delete_student(IPCMessage *request) {
-    if (delete_student(request->args.delete_student.arg1) == 0) {
+    char response[256];
+    int result = delete_student(request->args.delete_student.arg1, response);
+    
+    if (result == 0) {
         printf("Student deleted successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to delete student\n");
     }
+    
+    write_response_to_fifo(response, request->response_fifo);
 }
 
 void handle_edit_student(IPCMessage *request) {
-    if (edit_student_cgpa(request->args.edit_student.arg1, request->args.edit_student.arg2) == 0) {
+    char response[256];
+    int result = edit_student_cgpa(request->args.edit_student.arg1, request->args.edit_student.arg2, response);
+    
+    if (result == 0) {
         printf("Student edited successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to edit student\n");
     }
+    
+    write_response_to_fifo(response, request->response_fifo);
 }
 
 void handle_add_course(IPCMessage *request) {
-    if (add_course(request->args.add_course.arg1, request->args.add_course.arg2, request->args.add_course.arg3) == 0) {
+    char response[256];
+    int result = add_course(request->args.add_course.arg1, request->args.add_course.arg2, request->args.add_course.arg3, response);
+    
+    if (result == 0) {
         printf("Course added successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to add course\n");
     }
+    
+    write_response_to_fifo(response, request->response_fifo);
 }
 
 void handle_delete_course(IPCMessage *request) {
-    if (delete_course(request->args.delete_course.arg1, request->args.delete_course.arg2) == 0) {
+    char response[256];
+    int result = delete_course(request->args.delete_course.arg1, request->args.delete_course.arg2, response);
+    
+    if (result == 0) {
         printf("Course deleted successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to delete course\n");
     }
+    
+    write_response_to_fifo(response, request->response_fifo);
 }
 
 void handle_edit_course(IPCMessage *request) {
-    if (edit_course(request->args.edit_course.arg1, request->args.edit_course.arg2, request->args.edit_course.arg3) == 0) {
+    char response[256];
+    int result = edit_course(request->args.edit_course.arg1, request->args.edit_course.arg2, request->args.edit_course.arg3, response);
+    
+    if (result == 0) {
         printf("Course edited successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to edit course\n");
     }
+    
+    write_response_to_fifo(response, request->response_fifo);
 }
 
 void handle_write_database_into_output(IPCMessage *request) {
-    if (write_database_into_output() == 0) {
+    char response[256];
+    int result = write_database_into_output(response);
+    
+    if (result == 0) {
         printf("Database written to output successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to write database to output\n");
     }
+    
+    write_response_to_fifo(response, request->response_fifo);
 }
+
 
 int main() {
     int server_fd;
@@ -139,6 +225,7 @@ int main() {
             close(server_fd);
             exit(EXIT_FAILURE);
         }
+        
     }
 
     // Close the server FIFO (this code will never be reached in an infinite loop)

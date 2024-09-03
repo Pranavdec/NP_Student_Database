@@ -221,7 +221,7 @@ int edit_student_cgpa(int roll_no, float cgpa){
 int write_database_into_output(){
     IPCMessage message;
 
-    strcpy(message.operation, "write_database_into_output");
+    strcpy(message.operation, "write_database");
     message.query_number = request_id++;
     strcpy(message.response_fifo, client_fifo);
 

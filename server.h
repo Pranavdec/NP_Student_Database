@@ -6,6 +6,7 @@
 
 int setup_server_fifo();
 void handle_request(IPCMessage *request);
+void write_response_to_fifo(char *response, char *fifo_path);
 
 void handle_add_student(IPCMessage *request);
 void handle_delete_student(IPCMessage *request);

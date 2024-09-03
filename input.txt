@@ -22,7 +22,7 @@
 450, 42
 
 
-# add students
+# add student
 4, ad, 7.9, 3
 5, ae, 7.1, 3
 
