@@ -42,6 +42,9 @@ typedef struct IPCMESSAGE{
     } args;
 } IPCMessage;
 
-
+typedef struct CLIENTRESPONSE{
+    char response[256];
+    int query_number;
+} CLIENTRESPONSE;
 
 #endif

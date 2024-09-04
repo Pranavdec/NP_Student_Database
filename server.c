@@ -41,7 +41,7 @@ void handle_request(IPCMessage *request) {
         handle_delete_course(request);
     } else if (strcmp(request->operation, "edit_course") == 0) {
         handle_edit_course(request);
-    } else if (strcmp(request->operation, "write_database_into_output") == 0) {
+    } else if (strcmp(request->operation, "write_database") == 0) {
         handle_write_database_into_output(request);
     } else {
         fprintf(stderr, "Error: Unknown operation %s\n", request->operation);
@@ -50,16 +50,20 @@ void handle_request(IPCMessage *request) {
     return;
 }
 
-void write_response_to_fifo(char *response, char *fifo_path) {
+void write_response_to_fifo(char *response, int query_number, char *fifo_path) {
 
-    printf("Writing response");
+    CLIENTRESPONSE client_response;
+    client_response.query_number = query_number;
+    strcpy(client_response.response, response);
+
+    // printf("Writing response");
     int response_fd = open(fifo_path, O_WRONLY);
     if (response_fd < 0) {
         fprintf(stderr, "Error: Cannot open response FIFO %s\n", fifo_path);
         return;
     }
 
-    ssize_t bytes_written = write(response_fd, response, strlen(response) + 1);
+    ssize_t bytes_written = write(response_fd, &client_response, sizeof(CLIENTRESPONSE));
     if (bytes_written < 0) {
         fprintf(stderr, "Error: Cannot write to response FIFO %s\n", fifo_path);
     }else{
@@ -86,28 +90,15 @@ void handle_add_student(IPCMessage *request) {
     }
 
     // Debug statement for FIFO path
-    printf("Writing response to FIFO: %s\n", request->response_fifo);
+    // printf("Writing response to FIFO: %s\n", request->response_fifo);
 
     //The above printf is printing, the below printf is not printing
 
     // Write the response to the FIFO
-    printf("Writing response");
+    // printf("Writing response");
     // printf("\n");
 
-    int response_fd = open(request->response_fifo, O_WRONLY);
-    if (response_fd < 0) {
-        fprintf(stderr, "Error: Cannot open response FIFO %s\n", request->response_fifo);
-        return;
-    }
-
-    ssize_t bytes_written = write(response_fd, response, strlen(response) + 1);
-    if (bytes_written < 0) {
-        fprintf(stderr, "Error: Cannot write to response FIFO %s\n", request->response_fifo);
-    }else{
-        fprintf(stdout, "%ld bytes written\n", bytes_written);
-    }
-
-    close(response_fd);
+    write_response_to_fifo(response, request->query_number,request->response_fifo);
 }
 
 
@@ -121,7 +112,7 @@ void handle_delete_student(IPCMessage *request) {
         fprintf(stderr, "Error: Failed to delete student\n");
     }
     
-    write_response_to_fifo(response, request->response_fifo);
+    write_response_to_fifo(response, request->query_number,request->response_fifo);
 }
 
 void handle_edit_student(IPCMessage *request) {
@@ -134,7 +125,7 @@ void handle_edit_student(IPCMessage *request) {
         fprintf(stderr, "Error: Failed to edit student\n");
     }
     
-    write_response_to_fifo(response, request->response_fifo);
+    write_response_to_fifo(response, request->query_number,request->response_fifo);
 }
 
 void handle_add_course(IPCMessage *request) {
@@ -147,7 +138,7 @@ void handle_add_course(IPCMessage *request) {
         fprintf(stderr, "Error: Failed to add course\n");
     }
     
-    write_response_to_fifo(response, request->response_fifo);
+    write_response_to_fifo(response, request->query_number,request->response_fifo);
 }
 
 void handle_delete_course(IPCMessage *request) {
@@ -160,7 +151,7 @@ void handle_delete_course(IPCMessage *request) {
         fprintf(stderr, "Error: Failed to delete course\n");
     }
     
-    write_response_to_fifo(response, request->response_fifo);
+    write_response_to_fifo(response, request->query_number,request->response_fifo);
 }
 
 void handle_edit_course(IPCMessage *request) {
@@ -173,7 +164,7 @@ void handle_edit_course(IPCMessage *request) {
         fprintf(stderr, "Error: Failed to edit course\n");
     }
     
-    write_response_to_fifo(response, request->response_fifo);
+    write_response_to_fifo(response, request->query_number,request->response_fifo);
 }
 
 void handle_write_database_into_output(IPCMessage *request) {
@@ -186,26 +177,27 @@ void handle_write_database_into_output(IPCMessage *request) {
         fprintf(stderr, "Error: Failed to write database to output\n");
     }
     
-    write_response_to_fifo(response, request->response_fifo);
+    write_response_to_fifo(response, request->query_number,request->response_fifo);
 }
 
 
 int main() {
-    int server_fd;
     IPCMessage request;
 
-    // Create the FIFO (if it doesn't already exist)
-    if (mkfifo(SERVER_ENDPOINT, 0666) < 0 && errno != EEXIST) {
-        fprintf(stderr, "Error: Cannot create FIFO %s\n", SERVER_ENDPOINT);
-        exit(EXIT_FAILURE);
-    }
+    // // Create the FIFO (if it doesn't already exist)
+    // if (mkfifo(SERVER_ENDPOINT, 0666) < 0 && errno != EEXIST) {
+    //     fprintf(stderr, "Error: Cannot create FIFO %s\n", SERVER_ENDPOINT);
+    //     exit(EXIT_FAILURE);
+    // }
 
-    // Open the FIFO in read-only mode
-    server_fd = open(SERVER_ENDPOINT, O_RDONLY);
-    if (server_fd < 0) {
-        fprintf(stderr, "Error: Cannot open FIFO %s\n", SERVER_ENDPOINT);
-        exit(EXIT_FAILURE);
-    }
+    // // Open the FIFO in read-only mode
+    // server_fd = open(SERVER_ENDPOINT, O_RDONLY);
+    // if (server_fd < 0) {
+    //     fprintf(stderr, "Error: Cannot open FIFO %s\n", SERVER_ENDPOINT);
+    //     exit(EXIT_FAILURE);
+    // }
+
+    setup_server_fifo();
 
     printf("Server is running and waiting for client requests...\n");
 

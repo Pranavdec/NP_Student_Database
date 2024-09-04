@@ -232,6 +232,48 @@ int write_database_into_output(){
     return 0;
 }
 
+void *read_response() {
+    int fifo_fd;
+    ssize_t bytes_read;
+    CLIENTRESPONSE client_response;
+
+    fifo_fd = open(client_fifo, O_RDONLY);
+    if (fifo_fd < 0) {
+        fprintf(stderr, "Error: Cannot open FIFO for reading\n");
+        return NULL;
+    }
+
+    while (1) {
+        bytes_read = read(fifo_fd, &client_response, sizeof(CLIENTRESPONSE));
+        if (bytes_read < 0) {
+            fprintf(stderr, "Error: Cannot read from request FIFO\n");
+            continue;
+        } else if (bytes_read == 0) {
+            continue;
+        } else {
+            fprintf(stdout, "Received response: %s\n", client_response.response);
+            fprintf(stdout, "Query number: %d\n", client_response.query_number);
+
+            if (client_response.query_number == request_id -1) {
+                fprintf(stdout, "Response for request_id %d received. Closing FIFO.\n", request_id);
+                break; 
+            }
+        }
+    }
+
+    close(fifo_fd);
+    unlink(client_fifo);
+    return NULL;
+}
+
+
+pthread_t create_response_reading_thread(){
+    pthread_t thread;
+    pthread_create(&thread, NULL, read_response, NULL);
+    return thread;
+}
+
+
 int main(int argc, char* argv[]){
     signal(SIGPIPE, handle_sigpipe);
     if (argc != 2) {
@@ -246,6 +288,7 @@ int main(int argc, char* argv[]){
     }
 
     initiliaze_client_fifo();
+    pthread_t thread =create_response_reading_thread();
     connect_to_server();
 
     if(parse(file) != 0){
@@ -256,6 +299,7 @@ int main(int argc, char* argv[]){
     fclose(file);
 
     write_database_into_output();
+    pthread_join(thread, NULL);
     
     return 0;
 }
