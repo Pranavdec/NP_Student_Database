@@ -28,7 +28,7 @@ sem_t *get_semaphore() {
     return sem;
 }
 
-void handle_sigpipe(int sig) {
+void handle_sigpipe() {
     fprintf(stderr, "Error: Broken fifo, server might have closed the connection\n");
 }
 
@@ -46,34 +46,29 @@ int initiliaze_client_fifo(){
 int connect_to_server() {
     int attempts = 0;
 
-    // Create the FIFO if it doesn't exist
     if (mkfifo(SERVER_ENDPOINT, 0666) < 0 && errno != EEXIST) {
         fprintf(stderr, "Error: Cannot create FIFO %s\n", SERVER_ENDPOINT);
         return -1;
     }
 
-    // Try to open the FIFO in non-blocking mode
     while (attempts < MAX_ATTEMPTS) {
         server_fd = open(SERVER_ENDPOINT, O_WRONLY | O_NONBLOCK);
         
         if (server_fd >= 0) {
             fprintf(stdout, "Connected to server\n");
-            return server_fd; // Successfully connected
+            return server_fd;
         }
 
         if (errno == ENXIO) {
-            // No readers present, wait and retry
             fprintf(stderr, "No readers present. Retrying in %d seconds...\n", RETRY_INTERVAL);
             sleep(RETRY_INTERVAL);
             attempts++;
         } else {
-            // Other error occurred
             fprintf(stderr, "Error: Cannot connect to server\n");
             return -1;
         }
     }
 
-    // Failed to connect after retries
     fprintf(stderr, "Error: Failed to connect to server after %d attempts\n", MAX_ATTEMPTS);
     return -1;
 }
@@ -90,7 +85,7 @@ int send_request(void *request, size_t request_size) {
         
         if (bytes_written < 0) {
             if (errno == EINTR) {
-                continue; // Retry if interrupted by a signal
+                continue;
             } else if (errno == EPIPE) {
                 fprintf(stderr, "Error: Server closed the connection (EPIPE)\n");
                 sem_post(sem);
@@ -109,28 +104,23 @@ int send_request(void *request, size_t request_size) {
     return 0;
 }
 
-
 int add_course(int roll_no, int course_code, int marks) {
     IPCMessage message;
 
-    // Fill in the operation details
     strcpy(message.operation, "add_course");
     message.query_number = request_id++;
     strcpy(message.response_fifo, client_fifo);
 
-    // Fill in the specific arguments for add_course
     message.args.add_course.arg1 = roll_no;
     message.args.add_course.arg2 = course_code;
     message.args.add_course.arg3 = marks;
 
-    // Send the message
     if (send_request(&message, sizeof(IPCMessage)) == 1) {
         return 1;
     }
 
     return 0;
 }
-
 
 int delete_course(int roll_no, int course_code){
     IPCMessage message;
@@ -265,7 +255,6 @@ void *read_response() {
     unlink(client_fifo);
     return NULL;
 }
-
 
 pthread_t create_response_reading_thread(){
     pthread_t thread;

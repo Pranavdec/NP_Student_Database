@@ -1,33 +1,30 @@
-# Compiler
 CC = gcc
 
-# Compiler flags
 CFLAGS = -Wall -Wextra -Werror -std=c99
 
-# Source files
-SOURCES = dll.c database.c input_processing.c
+SERVER = server
+CLIENT = client
 
-# Header files
-HEADERS = course.h dll.h database.h student.h
+SERVER_SOURCES = server.c database.c dll.c
+CLIENT_SOURCES = client.c input_processing.c
 
-# Executable name
-EXECUTABLE = 2106_2122
+HEADERS = course.h dll.h database.h student.h globals.h
 
-# Objects
-OBJECTS = $(SOURCES:.c=.o)
+SERVER_OBJECTS = $(SERVER_SOURCES:.c=.o)
+CLIENT_OBJECTS = $(CLIENT_SOURCES:.c=.o)
 
-# Default rule
-all: $(EXECUTABLE)
 
-# Rule to create the executable
-$(EXECUTABLE): $(OBJECTS)
-	$(CC) $(CFLAGS) -o $(EXECUTABLE) $(OBJECTS)
+all: $(SERVER) $(CLIENT)
 
-# Rule to create object files
+$(SERVER): $(SERVER_OBJECTS)
+	$(CC) $(CFLAGS) -o $(SERVER) $(SERVER_OBJECTS)
+
+$(CLIENT): $(CLIENT_OBJECTS)
+	$(CC) $(CFLAGS) -o $(CLIENT) $(CLIENT_OBJECTS)
+
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $<
 
-# Clean rule
 clean:
-	rm -f $(OBJECTS) $(EXECUTABLE)
+	rm -f $(SERVER_OBJECTS) $(CLIENT_OBJECTS) $(SERVER) $(CLIENT)
 	rm -f 2106_2122.out
