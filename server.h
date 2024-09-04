@@ -5,7 +5,7 @@
 #include "database.h"
 
 int setup_server_fifo();
-void handle_request(IPCMessage *request);
+void *handle_request(void *arg);
 void write_response_to_fifo(char *response, int query_number, char *fifo_path);
 
 void handle_add_student(IPCMessage *request);

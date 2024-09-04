@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "server.h"
+#include <pthread.h>
 
 int server_fd;
 
@@ -25,7 +26,8 @@ int setup_server_fifo() {
     return 0;
 }
 
-void handle_request(IPCMessage *request) {
+void *handle_request(void *arg) {
+    IPCMessage *request = (IPCMessage *)arg;
     if (strcmp(request->operation, "add_student") == 0) {
         handle_add_student(request);
     } else if (strcmp(request->operation, "delete_student") == 0) {
@@ -43,8 +45,7 @@ void handle_request(IPCMessage *request) {
     } else {
         fprintf(stderr, "Error: Unknown operation %s\n", request->operation);
     }
-
-    return;
+    return NULL;
 }
 
 void write_response_to_fifo(char *response, int query_number, char *fifo_path) {
@@ -181,11 +182,13 @@ int main() {
     setup_server_fifo();
 
     printf("Server is running and waiting for client requests...\n");
+    pthread_t request_thread;
 
     while (1) {
         ssize_t bytes_read = read(server_fd, &request, sizeof(IPCMessage));
         if (bytes_read > 0) {
-            handle_request(&request);
+            pthread_create(&request_thread, NULL, handle_request, &request);
+            // handle_request(&request);
         } else if (bytes_read == 0) {
             continue;
         } else {

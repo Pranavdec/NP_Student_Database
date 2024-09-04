@@ -241,8 +241,8 @@ void *read_response() {
         } else if (bytes_read == 0) {
             continue;
         } else {
-            fprintf(stdout, "Received response: %s\n", client_response.response);
-            fprintf(stdout, "Query number: %d\n", client_response.query_number);
+            fprintf(stdout, "Received response: %s", client_response.response);
+            fprintf(stdout, "Query number: %d\n\n", client_response.query_number);
 
             if (client_response.query_number == request_id -1) {
                 fprintf(stdout, "Response for request_id %d received. Closing FIFO.\n", request_id);
