@@ -12,7 +12,8 @@
 int server_fd;
 
 void handle_sigpipe() {
-    fprintf(stderr, "Error: Broken fifo, server might have closed the connection\n");
+    fprintf(stderr, "Error: Broken fifo, server might have closed the connection\n");\
+    signal(SIGPIPE, handle_sigpipe);
 }
 
 int setup_server_fifo() {
