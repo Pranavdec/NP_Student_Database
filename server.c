@@ -54,40 +54,38 @@ void handle_request(IPCMessage *request) {
 }
 
 void write_response_to_fifo(char *response, int query_number, char *fifo_path) {
-    // printf("Writing\n");
-    // sleep(2);
-    // CLIENTRESPONSE client_response;
-    // client_response.query_number = query_number;
-    // strcpy(client_response.response, response);
+    CLIENTRESPONSE client_response;
+    client_response.query_number = query_number;
+    strcpy(client_response.response, response);
 
-    // int response_fd = open(fifo_path, O_WRONLY);
-    // if (response_fd <= 0) {
-    //     fprintf(stderr, "Error: Cannot open response FIFO %s\n", fifo_path);
-    //     return;
+    int response_fd = open(fifo_path, O_WRONLY | O_NONBLOCK);
+    if (response_fd <= 0) {
+        fprintf(stderr, "Error: Cannot open response FIFO %s\n", fifo_path);
+        return;
+    }
+
+    ssize_t bytes_written = write(response_fd, &client_response, sizeof(CLIENTRESPONSE));
+    if (bytes_written < 0) {
+            if (errno == EINTR) {
+                fprintf(stderr, "Error: Write operation intereupted by signal (EINTR)\n");
+                close(response_fd);
+                return;
+            } else if (errno == EPIPE) {
+                fprintf(stderr, "Error: Client closed the connection (EPIPE)\n");
+                close(response_fd);
+                return;
+            } else {
+                fprintf(stderr, "Error: Cannot write response to client\n");
+                close(response_fd);
+                return;
+            }
+        }
+    // else{
+    //     // fprintf(stdout, "%ld bytes written\n", bytes_written);
     // }
 
-    // ssize_t bytes_written = write(response_fd, &client_response, sizeof(CLIENTRESPONSE));
-    // if (bytes_written < 0) {
-    //         if (errno == EINTR) {
-    //             fprintf(stderr, "Error: Write operation intereupted by signal (EINTR)\n");
-    //             close(response_fd);
-    //             return;
-    //         } else if (errno == EPIPE) {
-    //             fprintf(stderr, "Error: Client closed the connection (EPIPE)\n");
-    //             close(response_fd);
-    //             return;
-    //         } else {
-    //             fprintf(stderr, "Error: Cannot write response to client\n");
-    //             close(response_fd);
-    //             return;
-    //         }
-    //     }
-    // // else{
-    // //     // fprintf(stdout, "%ld bytes written\n", bytes_written);
-    // // }
-
-    // close(response_fd);
-    return;
+    close(response_fd);
+    // return;
 }
 
 void handle_add_student(IPCMessage *request) {

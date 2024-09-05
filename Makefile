@@ -1,6 +1,6 @@
 CC = gcc
 
-# CFLAGS = -Wall -Wextra -Werror -std=c99
+CFLAGS = -Wall -Wextra -Werror -std=c99
 
 SERVER = server
 CLIENT = client

@@ -75,7 +75,6 @@ int connect_to_server() {
 }
 
 int send_request(void *request, size_t request_size) {
-    sleep(1);
     sem_t *sem = get_semaphore();
     ssize_t bytes_written = 0;
     size_t total_written = 0;
@@ -279,7 +278,7 @@ int main(int argc, char* argv[]){
     }
 
     initialize_client_fifo();
-    // pthread_t thread =create_response_reading_thread();
+    pthread_t thread =create_response_reading_thread();
     connect_to_server();
 
     if(parse(file) != 0){
@@ -293,7 +292,7 @@ int main(int argc, char* argv[]){
     fclose(file);
 
     write_database_into_output();
-    // pthread_join(thread, NULL);
+    pthread_join(thread, NULL);
     
     return 0;
 }
