@@ -331,10 +331,12 @@ int process_student(FILE* file) {
         return_code = add_student(roll_no, name, cgpa);
         if (return_code != 0) {
             fprintf(stderr,"Error: Failed to add student with roll number %d\n", roll_no);
+            return 1;
         }
 
         if (process_subject(roll_no, file, no_of_courses) != 0) {
             fprintf(stderr, "Error: Failed to process subjects for student with roll number %d\n\n", roll_no);
+            return 1;
         }
     }
 

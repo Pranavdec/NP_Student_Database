@@ -4,7 +4,7 @@
 #define FILE_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 
 sem_t *get_semaphore();
-int initiliaze_client_fifo();
+int initialize_client_fifo();
 int connect_to_server();
 int send_request(void *request, size_t request_size);
 int add_course(int roll_no, int course_code, int marks);

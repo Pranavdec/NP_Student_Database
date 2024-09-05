@@ -18,6 +18,7 @@
 char *client_fifo;
 int server_fd;
 int request_id = 0;
+int parse_complete = 0;
 
 sem_t *get_semaphore() {
     sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
@@ -32,7 +33,7 @@ void handle_sigpipe() {
     fprintf(stderr, "Error: Broken fifo, server might have closed the connection\n");
 }
 
-int initiliaze_client_fifo(){
+int initialize_client_fifo(){
     pid_t pid = getpid();
     client_fifo = (char *)malloc(20);
     sprintf(client_fifo, "/tmp/fifoclient.%d", pid);
@@ -70,10 +71,11 @@ int connect_to_server() {
     }
 
     fprintf(stderr, "Error: Failed to connect to server after %d attempts\n", MAX_ATTEMPTS);
-    return -1;
+    exit(-1);
 }
 
 int send_request(void *request, size_t request_size) {
+    sleep(1);
     sem_t *sem = get_semaphore();
     ssize_t bytes_written = 0;
     size_t total_written = 0;
@@ -89,11 +91,11 @@ int send_request(void *request, size_t request_size) {
             } else if (errno == EPIPE) {
                 fprintf(stderr, "Error: Server closed the connection (EPIPE)\n");
                 sem_post(sem);
-                return 1;
+                exit(-1);
             } else {
                 fprintf(stderr, "Error: Cannot send request to server\n");
                 sem_post(sem);
-                return 1;
+                return -1;
             }
         }
 
@@ -244,8 +246,8 @@ void *read_response() {
             fprintf(stdout, "Received response: %s\n", client_response.response);
             fprintf(stdout, "Query number: %d\n", client_response.query_number);
 
-            if (client_response.query_number == request_id -1) {
-                fprintf(stdout, "Response for request_id %d received. Closing FIFO.\n", request_id);
+            if (client_response.query_number == request_id -1 && parse_complete == 1) {
+                fprintf(stdout, "Response for request_id %d received.\n", request_id);
                 break; 
             }
         }
@@ -276,8 +278,8 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    initiliaze_client_fifo();
-    pthread_t thread =create_response_reading_thread();
+    initialize_client_fifo();
+    // pthread_t thread =create_response_reading_thread();
     connect_to_server();
 
     if(parse(file) != 0){
@@ -285,10 +287,13 @@ int main(int argc, char* argv[]){
         fclose(file);
         return 1;
     }
+    else{
+        parse_complete = 1;
+    }
     fclose(file);
 
     write_database_into_output();
-    pthread_join(thread, NULL);
+    // pthread_join(thread, NULL);
     
     return 0;
 }

@@ -82,6 +82,7 @@ int main() {
     // Read from the FIFO and print the message
     while (1) {
         if (read_from_fifo(fifo_fd) != 0) {
+            printf("Read error");
             break;
         }
     }

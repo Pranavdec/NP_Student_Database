@@ -7,8 +7,13 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "server.h"
+#include <signal.h>
 
 int server_fd;
+
+void handle_sigpipe() {
+    fprintf(stderr, "Error: Broken fifo, server might have closed the connection\n");
+}
 
 int setup_server_fifo() {
     if (mkfifo(SERVER_ENDPOINT, 0666) < 0 && errno != EEXIST) {
@@ -16,11 +21,12 @@ int setup_server_fifo() {
         return -1;
     }
 
-    server_fd = open(SERVER_ENDPOINT, O_RDONLY);
+    server_fd = open(SERVER_ENDPOINT, O_RDONLY | O_NONBLOCK);
     if (server_fd < 0) {
         fprintf(stderr, "Error: Cannot open FIFO %s\n", SERVER_ENDPOINT);
         return -1;
     }
+    // open(SERVER_ENDPOINT,O_WRONLY);
 
     return 0;
 }
@@ -48,26 +54,40 @@ void handle_request(IPCMessage *request) {
 }
 
 void write_response_to_fifo(char *response, int query_number, char *fifo_path) {
+    // printf("Writing\n");
+    // sleep(2);
+    // CLIENTRESPONSE client_response;
+    // client_response.query_number = query_number;
+    // strcpy(client_response.response, response);
 
-    CLIENTRESPONSE client_response;
-    client_response.query_number = query_number;
-    strcpy(client_response.response, response);
-
-    int response_fd = open(fifo_path, O_WRONLY);
-    if (response_fd < 0) {
-        fprintf(stderr, "Error: Cannot open response FIFO %s\n", fifo_path);
-        return;
-    }
-
-    ssize_t bytes_written = write(response_fd, &client_response, sizeof(CLIENTRESPONSE));
-    if (bytes_written < 0) {
-        fprintf(stderr, "Error: Cannot write to response FIFO %s\n", fifo_path);
-    }
-    // else{
-    //     // fprintf(stdout, "%ld bytes written\n", bytes_written);
+    // int response_fd = open(fifo_path, O_WRONLY);
+    // if (response_fd <= 0) {
+    //     fprintf(stderr, "Error: Cannot open response FIFO %s\n", fifo_path);
+    //     return;
     // }
 
-    close(response_fd);
+    // ssize_t bytes_written = write(response_fd, &client_response, sizeof(CLIENTRESPONSE));
+    // if (bytes_written < 0) {
+    //         if (errno == EINTR) {
+    //             fprintf(stderr, "Error: Write operation intereupted by signal (EINTR)\n");
+    //             close(response_fd);
+    //             return;
+    //         } else if (errno == EPIPE) {
+    //             fprintf(stderr, "Error: Client closed the connection (EPIPE)\n");
+    //             close(response_fd);
+    //             return;
+    //         } else {
+    //             fprintf(stderr, "Error: Cannot write response to client\n");
+    //             close(response_fd);
+    //             return;
+    //         }
+    //     }
+    // // else{
+    // //     // fprintf(stdout, "%ld bytes written\n", bytes_written);
+    // // }
+
+    // close(response_fd);
+    return;
 }
 
 void handle_add_student(IPCMessage *request) {
@@ -177,18 +197,20 @@ int main() {
     //     fprintf(stderr, "Error: Cannot open FIFO %s\n", SERVER_ENDPOINT);
     //     exit(EXIT_FAILURE);
     // }
-
+    signal(SIGPIPE, handle_sigpipe);
     setup_server_fifo();
 
     printf("Server is running and waiting for client requests...\n");
 
     while (1) {
-        ssize_t bytes_read = read(server_fd, &request, sizeof(IPCMessage));
+        int bytes_read = read(server_fd, &request, sizeof(IPCMessage));
         if (bytes_read > 0) {
             handle_request(&request);
         } else if (bytes_read == 0) {
             continue;
-        } else {
+        } else if (bytes_read == -1 && errno == EAGAIN) {
+            continue;  // No data available, try again later
+        }else {
             fprintf(stderr, "Error: Cannot read from FIFO %s\n", SERVER_ENDPOINT);
             close(server_fd);
             exit(EXIT_FAILURE);
