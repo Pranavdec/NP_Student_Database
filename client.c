@@ -70,8 +70,10 @@ int connect_to_server(char* ip, char* port_c) {
             fprintf(stderr, "Connection refused\n");
         else if (errno == EHOSTUNREACH || errno == ENETUNREACH)
             fprintf(stderr, "Host or network unreachable\n");
+        else if (errno == ECONNABORTED)
+            fprintf(stderr, "Connection aborted\n");
         else
-            perror("Connection failed");
+            fprintf(stderr, "Connection failed\n");
 
         close(socket_fd);
         exit(EXIT_FAILURE);
@@ -99,7 +101,7 @@ int add_course(int roll_no, int course_code, int marks) {
 
     strcpy(message.operation, "add_course");
     message.query_number = request_id++;
-    strcpy(message.response_fifo, client_fifo);
+    // strcpy(message.response_fifo, client_fifo);
 
     message.args.add_course.arg1 = roll_no;
     message.args.add_course.arg2 = course_code;
@@ -117,7 +119,7 @@ int delete_course(int roll_no, int course_code){
 
     strcpy(message.operation, "delete_course");
     message.query_number = request_id++;
-    strcpy(message.response_fifo, client_fifo);
+    // strcpy(message.response_fifo, client_fifo);
 
     message.args.delete_course.arg1 = roll_no;
     message.args.delete_course.arg2 = course_code;
@@ -134,7 +136,7 @@ int edit_course(int roll_no, int course_code, int marks){
 
     strcpy(message.operation, "edit_course");
     message.query_number = request_id++;
-    strcpy(message.response_fifo, client_fifo);
+    // strcpy(message.response_fifo, client_fifo);
 
     message.args.edit_course.arg1 = roll_no;
     message.args.edit_course.arg2 = course_code;
@@ -152,7 +154,7 @@ int add_student(int roll_no, char *name, float cgpa){
 
     strcpy(message.operation, "add_student");
     message.query_number = request_id++;
-    strcpy(message.response_fifo, client_fifo);
+    // strcpy(message.response_fifo, client_fifo);
 
     message.args.add_student.arg1 = roll_no;
     strcpy(message.args.add_student.arg2, name);
@@ -170,7 +172,7 @@ int delete_student(int roll_no){
 
     strcpy(message.operation, "delete_student");
     message.query_number = request_id++;
-    strcpy(message.response_fifo, client_fifo);
+    // strcpy(message.response_fifo, client_fifo);
 
     message.args.delete_student.arg1 = roll_no;
 
@@ -186,7 +188,7 @@ int edit_student_cgpa(int roll_no, float cgpa){
 
     strcpy(message.operation, "edit_student");
     message.query_number = request_id++;
-    strcpy(message.response_fifo, client_fifo);
+    // strcpy(message.response_fifo, client_fifo);
 
     message.args.edit_student.arg1 = roll_no;
     message.args.edit_student.arg2 = cgpa;
@@ -203,7 +205,7 @@ int write_database_into_output(){
 
     strcpy(message.operation, "write_database");
     message.query_number = request_id++;
-    strcpy(message.response_fifo, client_fifo);
+    // strcpy(message.response_fifo, client_fifo);
 
     if(send_request(&message, sizeof(IPCMessage)) == 1){
         return 1;
@@ -221,8 +223,9 @@ void *read_response() {
             exit(EXIT_FAILURE);
 
         } else {
-            fprintf(stdout, "Received response: %s\n", client_response.response);
             fprintf(stdout, "Query number: %d\n", client_response.query_number);
+            fprintf(stdout, "Received response: %s\n", client_response.response);
+            
 
             if (client_response.query_number == request_id -1 && parse_complete == 1) {
                 fprintf(stdout, "Response for request_id %d received.\n", request_id);
@@ -251,8 +254,8 @@ int main(int argc, char* argv[]){
     FILE* file = input_processing(argv[1]);
 
     initialize_client_socket();
-    pthread_t thread =create_response_reading_thread();
     connect_to_server(argv[2], argv[3]);
+    pthread_t thread =create_response_reading_thread();
 
     if(parse(file) != 0){
         fprintf(stderr, "Error: Failed to parse file Completely.\n");

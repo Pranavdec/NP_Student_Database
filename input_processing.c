@@ -3,6 +3,7 @@
 #include <ctype.h>
 // #include "database.h"
 #include "client.h"
+#include "input_processing.h"
 
 
 FILE* input_processing(char* filename){
@@ -25,66 +26,16 @@ char* trim_whitespace(char* str) {
     return str;
 }
 
-int process_subject(int roll_no, FILE* file, int no_of_courses) {
-    /* Process the subjects of the student
-
-    Args:
-    roll_no: int: Roll number of the student
-    file: FILE*: File pointer to the file
-    no_of_courses: int: Number of courses
-
-    Returns:
-    int: 0 if successful, 1 otherwise
-    */
-    
-    char line[200];
-    int course_code, marks;
-    int courses_processed = 0;
-
-    while (courses_processed < no_of_courses) {
-        if (!fgets(line, sizeof(line), file)) {
-            fprintf(stderr,"Error: Failed to read line\n");
-            return 1;
-        }
-
-        char* trimmed_line = trim_whitespace(line);
-        if (strlen(trimmed_line) == 0) {
-            continue;
-        }
-        int fields_processed = sscanf(trimmed_line, "%d,%d", &course_code, &marks);
-        if (fields_processed != 2) {
-            fprintf(stderr,"Error: Incorrect data format in course initialization line: %s\n", trimmed_line);
-            return 1;
-        }
-        // printf("Roll np: %d\n Course Code: %d\nMarks: %d\n", roll_no, course_code, marks);
-        int return_code = 0;
-        return_code = add_course(roll_no, course_code, marks);
-        if (return_code != 0) {
-            fprintf(stderr,"Error: Failed to add course with course code %d with roll no %d\n", course_code, roll_no);
-            return 1;
-        }
-        courses_processed++;
-        
-    }
-
-    return 0;
-}
-
-int handle_student_addition(char* line) {
-    char *trimmed_line = trim_whitespace(line);
-    if (strlen(trimmed_line) == 0) {
-        return 0;
-    }
-    
+int handle_student_addition(const char* line) {    
     int roll_no, no_of_courses;
     float cgpa;
     char name[100];
     int return_code = 0;
 
 
-    int fields_parsed = sscanf(trimmed_line, "%d,%99[^,],%f,%d", &roll_no, name, &cgpa, &no_of_courses);
+    int fields_parsed = sscanf(line, "%d,%99[^,],%f,%d", &roll_no, name, &cgpa, &no_of_courses);
     if (fields_parsed != 4) {
-        fprintf(stderr,"Error: Incorrect data format in student addition line: %s\n", trimmed_line);
+        fprintf(stderr,"Error: Incorrect data format in student addition line: %s\n", line);
         return 1;
     }
 
@@ -101,15 +52,11 @@ int handle_student_addition(char* line) {
     return 0;
 }
 
-int handle_student_deletion(char* line){
-    char *trimmed_line = trim_whitespace(line);
-    if(strlen(trimmed_line) == 0){
-        return 0;
-    }
+int handle_student_deletion(const char* line){
     int roll_no;
     int fields_parsed = sscanf(line, "%d", &roll_no);
     if (fields_parsed != 1) {
-        fprintf(stderr,"Error: Incorrect data format in student deletion line: %s\n", trimmed_line);
+        fprintf(stderr,"Error: Incorrect data format in student deletion line: %s\n", line);
         return 1;
     }
     // printf("Roll No: %d\n", roll_no);
@@ -122,16 +69,12 @@ int handle_student_deletion(char* line){
     return 0;
 }
 
-int handle_student_modification(char* line){
-    char *trimmed_line = trim_whitespace(line);
-    if(strlen(trimmed_line) == 0){
-        return 0;
-    }
+int handle_student_modification(const char* line){
     int roll_no;
     float cgpa;
     int fields_parsed = sscanf(line, "%d,%f", &roll_no, &cgpa);
     if (fields_parsed != 2) {
-        fprintf(stderr,"Error: Incorrect data format in student modification line: %s\n", trimmed_line);
+        fprintf(stderr,"Error: Incorrect data format in student modification line: %s\n", line);
         return 1;
     }
     // printf("Roll No: %d\nCGPA: %f\n", roll_no, cgpa);
@@ -145,16 +88,11 @@ int handle_student_modification(char* line){
     return 0;
 }
 
-int handle_course_addition(char* line){
-    char *trimmed_line = trim_whitespace(line);
-    if(strlen(trimmed_line) == 0){
-        return 0;
-    }
-    
+int handle_course_addition(const char* line){
     int roll_no, course_code, marks;
     int fields_parsed = sscanf(line, "%d,%d,%d", &roll_no, &course_code, &marks);
     if (fields_parsed != 3) {
-        fprintf(stderr,"Error: Incorrect data format in course addition line: %s\n", trimmed_line);
+        fprintf(stderr,"Error: Incorrect data format in course addition line: %s\n", line);
         return 1;
     }
     // printf("Roll No: %d\nCourse Code: %d\nMarks: %d\n", roll_no, course_code, marks);
@@ -169,16 +107,11 @@ int handle_course_addition(char* line){
     return 0;
 }
 
-int handle_course_deletion(char* line){
-    char *trimmed_line = trim_whitespace(line);
-    if(strlen(trimmed_line) == 0){
-        return 0;
-    }
-    
+int handle_course_deletion(const char* line){
     int roll_no, course_code;
     int fields_parsed = sscanf(line, "%d,%d", &roll_no, &course_code);
     if (fields_parsed != 2) {
-        fprintf(stderr,"Error: Incorrect data format in course deletion line: %s\n", trimmed_line);
+        fprintf(stderr,"Error: Incorrect data format in course deletion line: %s\n", line);
         return 1;
     }
     // printf("Roll No: %d\nCourse Code: %d\n", roll_no, course_code);
@@ -192,16 +125,11 @@ int handle_course_deletion(char* line){
     return 0;
 }
 
-int handle_course_modification(char* line){
-    char *trimmed_line = trim_whitespace(line);
-    if(strlen(trimmed_line) == 0){
-        return 0;
-    }
-    
+int handle_course_modification(const char* line){
     int roll_no, course_code, marks;
     int fields_parsed = sscanf(line, "%d,%d,%d", &roll_no, &course_code, &marks);
     if (fields_parsed != 3) {
-        fprintf(stderr,"Error: Incorrect data format in course modification line: %s\n", trimmed_line);
+        fprintf(stderr,"Error: Incorrect data format in course modification line: %s\n", line);
         return 1;
     }
     // printf("Roll No: %d\nCourse Code: %d\nMarks: %d\n", roll_no, course_code, marks);
@@ -215,69 +143,40 @@ int handle_course_modification(char* line){
     return 0;
 }
 
-int categorize_query(char* line) {
-    char* trimmed_line = trim_whitespace(line);
-    if (strlen(trimmed_line) == 0) {
-        return 0;
+QueryType categorize_query(const char* line) {
+    if (strcmp(line, "# add student") == 0) {
+        return Q_ADD_STUDENT;
+    } else if (strcmp(line, "# add course") == 0) {
+        return Q_ADD_COURSE;
+    } else if (strcmp(line, "# modify student") == 0) {
+        return Q_MODIFY_STUDENT;
+    } else if (strcmp(line, "# modify course") == 0) {
+        return Q_MODIFY_COURSE;
+    } else if (strcmp(line, "# delete student") == 0) {
+        return Q_DELETE_STUDENT;
+    } else if (strcmp(line, "# delete course") == 0) {
+        return Q_DELETE_COURSE;
+    } else{
+        return Q_NONE;
     }
-
-    if (strcmp(trimmed_line, "# add student") == 0) {
-        return 1;
-    } else if (strcmp(trimmed_line, "# add course") == 0) {
-        return 4;
-    } else if (strcmp(trimmed_line, "# modify student") == 0) {
-        return 3;
-    } else if (strcmp(trimmed_line, "# modify course") == 0) {
-        return 6;
-    } else if (strcmp(trimmed_line, "# delete student") == 0) {
-        return 2;
-    } else if (strcmp(trimmed_line, "# delete course") == 0) {
-        return 5;
-    }
-
-    return 0;
 }
 
-int process_line(int category, char* line) {
-    switch (category) {
-        case 1:
-            if (handle_student_addition(line) != 0) {
-                fprintf(stderr, "Failed to handle student addition\n");
-                return 1;
-            }
-            break;
-        case 2:
-            if (handle_student_deletion(line) != 0) {
-                fprintf(stderr, "Failed to handle student deletion\n");
-                return 1;
-            }
-            break;
-        case 3:
-            if (handle_student_modification(line) != 0) {
-                fprintf(stderr, "Failed to handle student modification\n");
-                return 1;
-            }
-            break;
-        case 4:
-            if (handle_course_addition(line) != 0) {
-                fprintf(stderr, "Failed to handle course addition\n");
-                return 1;
-            }
-            break;
-        case 5:
-            if (handle_course_deletion(line) != 0) {
-                fprintf(stderr, "Failed to handle course deletion\n");
-                return 1;
-            }
-            break;
-        case 6:
-            if (handle_course_modification(line) != 0) {
-                fprintf(stderr, "Failed to handle course modification\n");
-                return 1;
-            }
-            break;
+int process_line(QueryType q_type, const char* line){
+    switch (q_type){
+        case Q_ADD_STUDENT:
+            return handle_student_addition(line);
+        case Q_DELETE_STUDENT:
+            return handle_student_deletion(line);
+        case Q_MODIFY_STUDENT:
+            return handle_student_modification(line);
+        case Q_ADD_COURSE:
+            return handle_course_addition(line);
+        case Q_DELETE_COURSE:
+            return handle_course_deletion(line);
+        case Q_MODIFY_COURSE:
+            return handle_course_modification(line);
         default:
-            fprintf(stderr, "Error: Invalid category\n");
+            fprintf(stderr,"Error: Unknown command type\n");
             return 1;
     }
     return 0;
@@ -309,19 +208,34 @@ int handle_queries(char* line, FILE* file){
 
 int parse(FILE* file) {
     char line[200];
+    char* trimmed_line;
+    QueryType current_query = Q_NONE;
     
     while (fgets(line, sizeof(line), file)) {
-        char* trimmed_line = trim_whitespace(line);
+        trimmed_line = trim_whitespace(line);
 
         if (strlen(trimmed_line) == 0) {
             continue;
         }
 
-        if(handle_queries(line, file) != 0){
-            fprintf(stderr,"Error: Failed to process queries\n");
+        if(trimmed_line[0] == '#'){
+            current_query = categorize_query(trimmed_line);
+            if (current_query == Q_NONE) {
+                fprintf(stderr, "Error: Unknown command: %s\n", trimmed_line);
+                return 1;
+            }
+            continue;
+        }
+
+        if (current_query != Q_NONE) {
+            if (process_line(current_query, trimmed_line) != 0) {
+                fprintf(stderr, "Error: Failed to process line: %s\n", trimmed_line);
+                return 1;
+            }
+        } else {
+            fprintf(stderr, "Error: Data line found outside of any command block: %s\n", trimmed_line);
             return 1;
         }
-        return 0;
     }
 
     return 0;

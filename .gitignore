@@ -5,3 +5,5 @@
 server
 client
 *.o
+test.c
+main

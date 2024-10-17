@@ -11,7 +11,7 @@
 typedef struct IPCMESSAGE{
     char operation[20];
     int query_number;
-    char response_fifo[50];
+    // char response_fifo[50];
     union {
         struct {
             int arg1;
