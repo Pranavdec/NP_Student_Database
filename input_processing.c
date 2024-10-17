@@ -287,7 +287,10 @@ int handle_queries(char* line, FILE* file){
     while(!feof(file)){
         int category = categorize_query(line);
 
-        fgets(line, 200, file);
+        if (!fgets(line, 200, file)) {
+            fprintf(stderr,"Error: Failed to read line\n");
+            return 1;
+        }
         while(line[0] != '#'){
             if(process_line(category, line) != 0){
                 fprintf(stderr, "Error: Failed to process line :  %s\n\n", line);
@@ -304,52 +307,6 @@ int handle_queries(char* line, FILE* file){
     return 0;
 }
 
-int process_student(FILE* file) {
-    char line[200];
-    int roll_no, no_of_courses;
-    float cgpa;
-    char name[100];
-
-    while (fgets(line, sizeof(line), file) != NULL) {
-        char* trimmed_line = trim_whitespace(line);
-
-        if (strlen(trimmed_line) == 0) {
-            continue;
-        }
-
-        if (trimmed_line[0] == '#') {
-            break;
-        }
-
-        int fields_parsed = sscanf(trimmed_line, "%d,%99[^,],%f,%d", &roll_no, name, &cgpa, &no_of_courses);
-        if (fields_parsed != 4) {
-            fprintf(stderr,"Error: Incorrect data format in student initialization line: %s\n", trimmed_line);
-            return 1;
-        }
-        // printf("Roll No: %d\nName: %s\nCGPA: %f\nNo of Courses: %d\n", roll_no, name, cgpa, no_of_courses);
-        int return_code = 0;
-        return_code = add_student(roll_no, name, cgpa);
-        if (return_code != 0) {
-            fprintf(stderr,"Error: Failed to add student with roll number %d\n", roll_no);
-            return 1;
-        }
-
-        if (process_subject(roll_no, file, no_of_courses) != 0) {
-            fprintf(stderr, "Error: Failed to process subjects for student with roll number %d\n\n", roll_no);
-            return 1;
-        }
-    }
-
-    printf("Database initialization completed\n");
-
-    if (handle_queries(line, file) != 0) {
-        fprintf(stderr,"Error: Failed to process queries\n");
-        return 1;
-    }
-    printf("Queries processed\n");
-    return 0;
-}
-
 int parse(FILE* file) {
     char line[200];
     
@@ -360,13 +317,8 @@ int parse(FILE* file) {
             continue;
         }
 
-        if (trimmed_line[0] != '#' || trimmed_line[1] != ' ' || trimmed_line[2] != 'i' || trimmed_line[3] != 'n') {
-            fprintf(stderr, "Error: Incorrect line for Database Initilization\n");
-            return 1;
-        }
-
-        if(process_student(file) != 0){
-            fprintf(stderr, "Error: Failed to process students in Database Initilization Section.\n");
+        if(handle_queries(line, file) != 0){
+            fprintf(stderr,"Error: Failed to process queries\n");
             return 1;
         }
         return 0;
@@ -374,4 +326,3 @@ int parse(FILE* file) {
 
     return 0;
 }
-

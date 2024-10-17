@@ -54,3 +54,4 @@ Once a client has finished sending all of its required requests, it will send a 
 - The server supports multiple clients simultaneously.
 - Each client will receive responses from the server in real-time.
 - Ensure that the input file for each client starts with `# initial database`, denoting the initial database setup.
+- Server doesn't exit unless a gracefull exit occurs.

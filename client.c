@@ -11,12 +11,15 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include "input_processing.h"
 
 
 
+
 char *client_fifo;
-int server_fd;
+int socket_fd;
 int request_id = 0;
 int parse_complete = 0;
 
@@ -33,72 +36,49 @@ void handle_sigpipe() {
     fprintf(stderr, "Error: Broken fifo, server might have closed the connection\n");
 }
 
-int initialize_client_fifo(){
-    pid_t pid = getpid();
-    client_fifo = (char *)malloc(20);
-    sprintf(client_fifo, "/tmp/fifoclient.%d", pid);
-    if(mkfifo(client_fifo, FILE_MODE) < 0){
-        fprintf(stderr, "Error: Cannot create client fifo\n");
-        return 1;
+int initialize_client_socket(){
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(socket_fd < 0){
+        fprintf(stderr, "Socket creation Failed");
+        exit(EXIT_FAILURE);
     }
-    return 0;
+    return 0;   
 }
 
-int connect_to_server() {
-    int attempts = 0;
-
-    if (mkfifo(SERVER_ENDPOINT, 0666) < 0 && errno != EEXIST) {
-        fprintf(stderr, "Error: Cannot create FIFO %s\n", SERVER_ENDPOINT);
-        return -1;
+int connect_to_server(char ip, char port_c) {
+    struct  sockaddr_in servaddr;
+    char *endptr;
+    long port = strtol(port_c, &endptr, 10);
+    if (*endptr != '\0' || port < 1 || port > 65535) {
+        fprintf(stderr, "Invalid port number");
+        exit(EXIT_FAILURE);
     }
 
-    while (attempts < MAX_ATTEMPTS) {
-        server_fd = open(SERVER_ENDPOINT, O_WRONLY | O_NONBLOCK);
-        
-        if (server_fd >= 0) {
-            fprintf(stdout, "Connected to server\n");
-            return server_fd;
-        }
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(port);
 
-        if (errno == ENXIO) {
-            fprintf(stderr, "No readers present. Retrying in %d seconds...\n", RETRY_INTERVAL);
-            sleep(RETRY_INTERVAL);
-            attempts++;
-        } else {
-            fprintf(stderr, "Error: Cannot connect to server\n");
-            return -1;
-        }
+    if (inet_pton(AF_INET, ip, &servaddr.sin_addr) <=0 ){
+        fprintf(stderr,"Invalid IPAddress or Address not supported");
+        exit(EXIT_FAILURE);
     }
 
-    fprintf(stderr, "Error: Failed to connect to server after %d attempts\n", MAX_ATTEMPTS);
-    exit(-1);
+    if (connect(socket_fd, (struct sockaddr*)&servaddr,sizeof(servaddr))< 0) {
+        fprintf(stderr,"Connect failed");
+        close(socket_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    return 0;
 }
 
 int send_request(void *request, size_t request_size) {
     sem_t *sem = get_semaphore();
-    ssize_t bytes_written = 0;
-    size_t total_written = 0;
 
     sem_wait(sem);
 
-    while (total_written < request_size) {
-        bytes_written = write(server_fd, request + total_written, request_size - total_written);
-        
-        if (bytes_written < 0) {
-            if (errno == EINTR) {
-                continue;
-            } else if (errno == EPIPE) {
-                fprintf(stderr, "Error: Server closed the connection (EPIPE)\n");
-                sem_post(sem);
-                exit(-1);
-            } else {
-                fprintf(stderr, "Error: Cannot send request to server\n");
-                sem_post(sem);
-                return -1;
-            }
-        }
-
-        total_written += bytes_written;
+    if(writen(socket_fd, request,request_size) <=0){
+        fprintf(stderr,"Error to send data on tcp.");
+        exit(EXIT_FAILURE);
     }
 
     sem_post(sem);
@@ -224,23 +204,13 @@ int write_database_into_output(){
 }
 
 void *read_response() {
-    int fifo_fd;
-    ssize_t bytes_read;
     CLIENTRESPONSE client_response;
 
-    fifo_fd = open(client_fifo, O_RDONLY);
-    if (fifo_fd < 0) {
-        fprintf(stderr, "Error: Cannot open FIFO for reading\n");
-        return NULL;
-    }
-
     while (1) {
-        bytes_read = read(fifo_fd, &client_response, sizeof(CLIENTRESPONSE));
-        if (bytes_read < 0) {
-            fprintf(stderr, "Error: Cannot read from request FIFO\n");
-            continue;
-        } else if (bytes_read == 0) {
-            continue;
+        if(readn(socket_fd, &client_response,sizeof(CLIENTRESPONSE)) <=0){
+            fprintf(stderr,"Error to send data on tcp.");
+            exit(EXIT_FAILURE);
+
         } else {
             fprintf(stdout, "Received response: %s\n", client_response.response);
             fprintf(stdout, "Query number: %d\n", client_response.query_number);
@@ -252,8 +222,6 @@ void *read_response() {
         }
     }
 
-    close(fifo_fd);
-    unlink(client_fifo);
     return NULL;
 }
 
@@ -266,20 +234,16 @@ pthread_t create_response_reading_thread(){
 
 int main(int argc, char* argv[]){
     signal(SIGPIPE, handle_sigpipe);
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <input_file>\n", argv[0]);
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s <input_file> <Server IP> <Port>\n", argv[0]);
         return 1;
     }
 
     FILE* file = input_processing(argv[1]);
-    if(file == NULL){
-        fprintf(stderr, "Error: Failed to open file.\n");
-        return 1;
-    }
 
-    initialize_client_fifo();
+    initialize_client_socket();
     pthread_t thread =create_response_reading_thread();
-    connect_to_server();
+    connect_to_server(argv[2], argv[3]);
 
     if(parse(file) != 0){
         fprintf(stderr, "Error: Failed to parse file Completely.\n");
@@ -292,6 +256,10 @@ int main(int argc, char* argv[]){
     fclose(file);
 
     write_database_into_output();
+    if (shutdown(socket_fd,SHUT_WR) <0 ){
+        fprintf(stderr, "Error: Failed to send FIN for colsing one end of writing from client.");
+    }
+
     pthread_join(thread, NULL);
     
     return 0;
