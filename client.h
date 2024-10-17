@@ -5,7 +5,7 @@
 
 sem_t *get_semaphore();
 int initialize_client_socket();
-int connect_to_server();
+int connect_to_server(char* ip, char* port_c);
 int send_request(void *request, size_t request_size);
 int add_course(int roll_no, int course_code, int marks);
 int delete_course(int roll_no, int course_code);

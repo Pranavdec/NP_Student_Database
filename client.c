@@ -45,7 +45,7 @@ int initialize_client_socket(){
     return 0;   
 }
 
-int connect_to_server(char ip, char port_c) {
+int connect_to_server(char* ip, char* port_c) {
     struct  sockaddr_in servaddr;
     char *endptr;
     long port = strtol(port_c, &endptr, 10);
@@ -54,6 +54,7 @@ int connect_to_server(char ip, char port_c) {
         exit(EXIT_FAILURE);
     }
 
+    memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(port);
 
@@ -62,8 +63,16 @@ int connect_to_server(char ip, char port_c) {
         exit(EXIT_FAILURE);
     }
 
-    if (connect(socket_fd, (struct sockaddr*)&servaddr,sizeof(servaddr))< 0) {
-        fprintf(stderr,"Connect failed");
+    if (connect(socket_fd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0) {
+        if (errno == ETIMEDOUT)
+            fprintf(stderr, "Connection timed out\n");
+        else if (errno == ECONNREFUSED)
+            fprintf(stderr, "Connection refused\n");
+        else if (errno == EHOSTUNREACH || errno == ENETUNREACH)
+            fprintf(stderr, "Host or network unreachable\n");
+        else
+            perror("Connection failed");
+
         close(socket_fd);
         exit(EXIT_FAILURE);
     }
