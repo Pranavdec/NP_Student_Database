@@ -5,7 +5,7 @@ CFLAGS = -Wall -Wextra -Werror -std=c99
 SERVER = server
 CLIENT = client
 
-SERVER_SOURCES = server.c database.c dll.c
+SERVER_SOURCES = server.c database.c dll.c globals.c
 CLIENT_SOURCES = client.c input_processing.c globals.c
 
 HEADERS = course.h dll.h database.h student.h globals.h

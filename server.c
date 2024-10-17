@@ -27,7 +27,7 @@ int setup_server_socket() {
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) {
-        perror("Error: Cannot create socket");
+        fprintf(stderr,"Error: Error during socket creation\n");
         return -1;
     }
 
@@ -39,12 +39,16 @@ int setup_server_socket() {
     server_addr.sin_port = htons(server_port);
 
     if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        perror("Error: Cannot bind socket");
+        if (errno == EADDRINUSE){
+            fprintf(stderr,"Error: Address already in use - produced EADDRINUSE\n");
+            return -1;
+        }
+        fprintf(stderr,"Error: Error during bind\n");
         return -1;
     }
 
     if (listen(server_fd, MAX_CLIENTS) < 0) {
-        perror("Error: Cannot listen on socket");
+        fprintf(stderr,"Error: Error during listen\n");
         return -1;
     }
 
@@ -56,12 +60,12 @@ void write_response_to_socket(int client_fd, char *response, int query_number) {
     client_response.query_number = query_number;
     strcpy(client_response.response, response);
 
-    ssize_t bytes_written = write(client_fd, &client_response, sizeof(CLIENTRESPONSE));
+    ssize_t bytes_written = writen(client_fd, &client_response, sizeof(CLIENTRESPONSE));
     if (bytes_written < 0) {
         if (errno == EPIPE) {
             fprintf(stderr, "Error: Client closed the connection (EPIPE)\n");
         } else {
-            perror("Error: Cannot write response to client");
+            fprintf(stderr,"Error: Error during write into client fd\n");
         }
     }
 }
@@ -93,7 +97,7 @@ void handle_add_student(int client_fd, IPCMessage *request) {
     pthread_mutex_unlock(&mutex);
 
     if (result == 0) {
-        printf("Student added successfully\n");
+        fprintf(stdout,"Student added successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to add student\n");
     }
@@ -108,7 +112,7 @@ void handle_delete_student(int client_fd, IPCMessage *request) {
     pthread_mutex_unlock(&mutex);
 
     if (result == 0) {
-        printf("Student deleted successfully\n");
+        fprintf(stdout,"Student deleted successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to delete student\n");
     }
@@ -123,7 +127,7 @@ void handle_edit_student(int client_fd, IPCMessage *request) {
     pthread_mutex_unlock(&mutex);
 
     if (result == 0) {
-        printf("Student edited successfully\n");
+        fprintf(stdout,"Student edited successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to edit student\n");
     }
@@ -138,7 +142,7 @@ void handle_add_course(int client_fd, IPCMessage *request) {
     pthread_mutex_unlock(&mutex);
 
     if (result == 0) {
-        printf("Course added successfully\n");
+        fprintf(stdout,"Course added successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to add course\n");
     }
@@ -153,7 +157,7 @@ void handle_delete_course(int client_fd, IPCMessage *request) {
     pthread_mutex_unlock(&mutex);
 
     if (result == 0) {
-        printf("Course deleted successfully\n");
+        fprintf(stdout,"Course deleted successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to delete course\n");
     }
@@ -168,7 +172,7 @@ void handle_edit_course(int client_fd, IPCMessage *request) {
     pthread_mutex_unlock(&mutex);
 
     if (result == 0) {
-        printf("Course edited successfully\n");
+        fprintf(stdout,"Course edited successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to edit course\n");
     }
@@ -183,7 +187,7 @@ void handle_write_database_into_output(int client_fd, IPCMessage *request) {
     pthread_mutex_unlock(&mutex);
 
     if (result == 0) {
-        printf("Database written to output successfully\n");
+        fprintf(stdout,"Database written to output successfully\n");
     } else {
         fprintf(stderr, "Error: Failed to write database to output\n");
     }
@@ -195,14 +199,18 @@ void handle_client(int client_fd) {
     IPCMessage request;
     ssize_t bytes_read;
 
-    while ((bytes_read = read(client_fd, &request, sizeof(IPCMessage))) > 0) {
-        handle_request(client_fd, &request);
+    while ((bytes_read = readn(client_fd, &request, sizeof(IPCMessage))) > 0) {
+        if (bytes_read == sizeof(IPCMessage)){
+            handle_request(client_fd, &request);
+        }else{
+            fprintf(stderr, "Error: Client sent incomplete IPCMessage when querying\n");
+        }
     }
 
     if (bytes_read == 0) {
-        printf("Client disconnected\n");
+        fprintf(stdout,"Client disconnected\n");
     } else if (bytes_read < 0) {
-        perror("Error: Cannot read from client");
+        fprintf(stderr,"Error: Cannot read from socket\n");
     }
 
     close(client_fd);
@@ -210,7 +218,7 @@ void handle_client(int client_fd) {
 
 void *client_handler(void *arg) {
     int client_fd = *((int *)arg);
-
+    free(arg);
     handle_client(client_fd);
 
     return NULL;
@@ -238,23 +246,27 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    printf("Server is running and waiting for client connections on port %d...\n", server_port);
+    fprintf(stdout,"Server is running and waiting for client connections on port %d...\n", server_port);
+
+    int *client_fd;
 
     while (1) {
-        int client_fd;
+        client_fd = malloc(sizeof(int));
 
-        client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-        if (client_fd < 0) {
-            perror("Error: Cannot accept client connection");
+        *client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+        if (*client_fd < 0) {
+            fprintf(stderr,"Error: Cannot accept client connection\n");
+            free(client_fd);
             continue;
         }
 
-        printf("Accepted connection from client\n");
+        fprintf(stdout,"Accepted connection from client\n");
 
         pthread_t thread_id;
-        if (pthread_create(&thread_id, NULL, client_handler, &client_fd) != 0) {
-            perror("Error: Cannot create thread");
-            close(client_fd);  
+        if (pthread_create(&thread_id, NULL, client_handler, client_fd) != 0) {
+            fprintf(stderr,"Error: Cannot create thread to process client. Client connection closing..\n");
+            close(*client_fd);  
+            free(client_fd);
             continue;
         }
 
